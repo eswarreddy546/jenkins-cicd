@@ -1,4 +1,5 @@
 pipeline {
+<<<<<<< HEAD
 
     agent {
         node {
@@ -20,12 +21,17 @@ pipeline {
     options {
         timeout(time: 30, unit: 'MINUTES')
         disableConcurrentBuilds()
+=======
+    agent {
+        label 'AGENT-1'
+>>>>>>> 6ec7c541ae0ca1aaaff2ee6ab3c54626f9e17809
     }
 
     stages {
 
         stage('Checkout') {
             steps {
+<<<<<<< HEAD
                 checkout scm
             }
         }
@@ -123,11 +129,33 @@ pipeline {
                 docker push ${ECR_REPO}:${appVersion}
                 docker push ${ECR_REPO}:latest
                 """
+=======
+                echo 'Checking out source code...'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Building the application...'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Running tests...'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'Deploying the application...'
+>>>>>>> 6ec7c541ae0ca1aaaff2ee6ab3c54626f9e17809
             }
         }
     }
 
     post {
+<<<<<<< HEAD
 
         always {
             echo "Cleaning Workspace..."
@@ -144,6 +172,18 @@ pipeline {
 
         aborted {
             echo "Pipeline Aborted"
+=======
+        always {
+            echo 'Pipeline execution completed.'
+        }
+
+        success {
+            echo 'Build completed successfully.'
+        }
+
+        failure {
+            echo 'Build failed.'
+>>>>>>> 6ec7c541ae0ca1aaaff2ee6ab3c54626f9e17809
         }
     }
 }
