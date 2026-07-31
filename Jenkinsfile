@@ -1,91 +1,149 @@
 pipeline {
-    // These are pre-build sections
+
     agent {
         node {
             label 'AGENT-1'
         }
     }
+
     environment {
-        COURSE = "Jenkins"
-        appVersion = ""
-        ACC_ID = "160885265516"
-        PROJECT = "roboshop"
-        COMPONENT = "catalogue"
+        COURSE      = "Jenkins"
+        appVersion  = ""
+        ACC_ID      = "526426842890"
+        PROJECT     = "roboshop"
+        COMPONENT   = "catalogue"
+        REGION      = "us-east-1"
+
+        ECR_REPO    = "${ACC_ID}.dkr.ecr.${REGION}.amazonaws.com/${PROJECT}/${COMPONENT}"
     }
+
     options {
-        timeout(time: 10, unit: 'MINUTES') 
+        timeout(time: 30, unit: 'MINUTES')
         disableConcurrentBuilds()
     }
-    // This is build section
+
     stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Read Version') {
             steps {
-                script{
+                script {
                     def packageJSON = readJSON file: 'package.json'
                     appVersion = packageJSON.version
-                    echo "app version: ${appVersion}"
+                    echo "Application Version : ${appVersion}"
                 }
             }
         }
+
         stage('Install Dependencies') {
             steps {
-                script{
-                    sh """
-                        npm install --include=dev
-                    """
-                }
+                sh '''
+                npm install --include=dev
+                '''
             }
         }
+
         stage('Unit Test') {
             steps {
-                script{
-                    sh """
-                        npm test
-                    """
-                }
+                sh '''
+                npm test
+                '''
             }
         }
-        //Here you need to select scanner tool and send the analysis to server
-        stage('Sonar Scan'){
-            environment {
-                def scannerHome = tool 'sonar-8.0'
-            }
+
+        stage('SonarQube Scan') {
             steps {
-                script{
-                    withSonarQubeEnv('sonar-server') {
-                        sh  "${scannerHome}/bin/sonar-scanner"
+                script {
+
+                    def scannerHome = tool 'SonarScanner'
+
+                    withSonarQubeEnv('sonar-qube') {
+                        sh """
+                        ${scannerHome}/bin/sonar-scanner \
+                        -Dsonar.projectKey=${COMPONENT} \
+                        -Dsonar.projectName=${COMPONENT} \
+                        -Dsonar.sources=. \
+                        -Dsonar.projectVersion=${appVersion}
+                        """
                     }
                 }
             }
         }
+
         stage('Quality Gate') {
             steps {
                 timeout(time: 1, unit: 'HOURS') {
-                    // Wait for the quality gate status
-                    // abortPipeline: true will fail the Jenkins job if the quality gate is 'FAILED'
-                    waitForQualityGate abortPipeline: true 
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
-    
 
+        stage('Docker Build') {
+            steps {
+                sh """
+                docker build -t ${PROJECT}/${COMPONENT}:${appVersion} .
+                """
+            }
+        }
+
+        // // stage('Trivy Image Scan') {
+        // //     steps {
+        // //         sh """
+        // //         trivy image ${PROJECT}/${COMPONENT}:${appVersion}
+        // //         """
+        // //     }
+        // }
+
+        stage('Login to AWS ECR') {
+            steps {
+                sh """
+                aws ecr get-login-password --region ${REGION} | \
+                docker login --username AWS --password-stdin ${ACC_ID}.dkr.ecr.${REGION}.amazonaws.com
+                """
+            }
+        }
+
+        stage('Tag Docker Image') {
+            steps {
+                sh """
+                docker tag ${PROJECT}/${COMPONENT}:${appVersion} ${ECR_REPO}:${appVersion}
+                docker tag ${PROJECT}/${COMPONENT}:${appVersion} ${ECR_REPO}:latest
+                """
+            }
+        }
+
+        stage('Push Image to ECR') {
+            steps {
+                sh """
+                docker push ${ECR_REPO}:${appVersion}
+                docker push ${ECR_REPO}:latest
+                """
+            }
+        }
     }
 
-        
+    post {
 
-    post{
-        always{
-            echo 'I will always say Hello again!'
+        always {
+            echo "Cleaning Workspace..."
             cleanWs()
         }
+
         success {
-            echo 'I will run if success'
+            echo "Pipeline Completed Successfully"
         }
+
         failure {
-            echo 'I will run if failure'
+            echo "Pipeline Failed"
         }
+
         aborted {
-            echo 'pipeline is aborted'
+            echo "Pipeline Aborted"
         }
     }
 }
