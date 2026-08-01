@@ -268,7 +268,7 @@ pipeline {
             }
         }
 
-        stage('Terraform EKS') {
+                 stage('Terraform EKS') {
             steps {
                 dir('/home/ec2-user/eks-automation-deployment/90-eks') {
 
@@ -287,6 +287,9 @@ pipeline {
                 }
             }
         }
+
+      // <-- Close stages block
+
     post {
 
         always {
@@ -306,3 +309,5 @@ pipeline {
             echo "Pipeline Aborted"
         }
     }
+
+   // <-- Close pipeline block
