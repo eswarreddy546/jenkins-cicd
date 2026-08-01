@@ -302,6 +302,8 @@ pipeline {
             echo "Pipeline Failed"
         }
 
-        
+        aborted {
+            echo "Pipeline Aborted"
+        }
     }
 }
