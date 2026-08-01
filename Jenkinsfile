@@ -148,23 +148,93 @@ pipeline {
             }
         }
 
-        stage('Terraform VPC') {
+         stage('Terraform VPC') {
             steps {
-
                 dir('/home/ec2-user/eks-automation-deployment/00-vpc') {
+                    sh '''
+                        terraform init
+                        terraform validate
+                        terraform plan
+                        terraform apply -auto-approve
+                    '''
+                }
+            }
+        }
 
-                    withCredentials([[
-                        $class: 'AmazonWebServicesCredentialsBinding',
-                        credentialsId: 'aws-cred'
-                    ]]) {
+        stage('Terraform Security Groups') {
+            steps {
+                dir('/home/ec2-user/eks-automation-deployment/10-sg') {
+                    sh '''
+                        terraform init
+                        terraform validate
+                        terraform plan
+                        terraform apply -auto-approve
+                    '''
+                }
+            }
+        }
 
-                        sh '''
-                            terraform init
-                            terraform validate
-                            terraform plan
-                            terraform apply -auto-approve
-                        '''
-                    }
+        stage('Terraform Bastion') {
+            steps {
+                dir('/home/ec2-user/eks-automation-deployment/20-bastion') {
+                    sh '''
+                        terraform init
+                        terraform validate
+                        terraform plan
+                        terraform apply -auto-approve
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform SG Rules') {
+            steps {
+                dir('/home/ec2-user/eks-automation-deployment/30-sg-rules') {
+                    sh '''
+                        terraform init
+                        terraform validate
+                        terraform plan
+                        terraform apply -auto-approve
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform ACM') {
+            steps {
+                dir('/home/ec2-user/eks-automation-deployment/70-acm') {
+                    sh '''
+                        terraform init
+                        terraform validate
+                        terraform plan
+                        terraform apply -auto-approve
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform Frontend ALB') {
+            steps {
+                dir('/home/ec2-user/eks-automation-deployment/80-frontend-alb') {
+                    sh '''
+                        terraform init
+                        terraform validate
+                        terraform plan
+                        terraform apply -auto-approve
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform EKS') {
+            steps {
+                dir('/home/ec2-user/eks-automation-deployment/90-eks') {
+                    sh '''
+                        terraform init
+                        terraform validate
+                        terraform plan
+                        terraform apply -auto-approve
+                    '''
                 }
             }
         }
