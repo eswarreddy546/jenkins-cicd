@@ -1,5 +1,4 @@
 pipeline {
-<<<<<<< HEAD
 
     agent {
         node {
@@ -21,17 +20,12 @@ pipeline {
     options {
         timeout(time: 30, unit: 'MINUTES')
         disableConcurrentBuilds()
-=======
-    agent {
-        label 'AGENT-1'
->>>>>>> 6ec7c541ae0ca1aaaff2ee6ab3c54626f9e17809
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-<<<<<<< HEAD
                 checkout scm
             }
         }
@@ -49,7 +43,7 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
-                npm install --include=dev
+                    npm install
                 '''
             }
         }
@@ -57,7 +51,7 @@ pipeline {
         stage('Unit Test') {
             steps {
                 sh '''
-                npm test
+                    npm test
                 '''
             }
         }
@@ -70,11 +64,11 @@ pipeline {
 
                     withSonarQubeEnv('sonar-qube') {
                         sh """
-                        ${scannerHome}/bin/sonar-scanner \
-                        -Dsonar.projectKey=${COMPONENT} \
-                        -Dsonar.projectName=${COMPONENT} \
-                        -Dsonar.sources=. \
-                        -Dsonar.projectVersion=${appVersion}
+                            ${scannerHome}/bin/sonar-scanner \
+                              -Dsonar.projectKey=${COMPONENT} \
+                              -Dsonar.projectName=${COMPONENT} \
+                              -Dsonar.sources=. \
+                              -Dsonar.projectVersion=${appVersion}
                         """
                     }
                 }
@@ -92,33 +86,55 @@ pipeline {
         stage('Docker Build') {
             steps {
                 sh """
-                docker build -t ${PROJECT}/${COMPONENT}:${appVersion} .
+                    docker build -t ${PROJECT}/${COMPONENT}:${appVersion} .
                 """
             }
         }
 
-        // // stage('Trivy Image Scan') {
-        // //     steps {
-        // //         sh """
-        // //         trivy image ${PROJECT}/${COMPONENT}:${appVersion}
-        // //         """
-        // //     }
-        // }
+        /*
+        stage('Trivy Image Scan') {
+            steps {
+                sh """
+                    echo "=========================================="
+                    echo "     Trivy Image Vulnerability Scan"
+                    echo "=========================================="
+
+                    docker images
+
+                    trivy image \
+                      --scanners vuln \
+                      --severity LOW,MEDIUM,HIGH,CRITICAL \
+                      --format table \
+                      --ignore-unfixed \
+                      localhost/${PROJECT}/${COMPONENT}:${appVersion}
+                """
+            }
+        }
+        */
 
         stage('Login to AWS ECR') {
             steps {
-                sh """
-                aws ecr get-login-password --region ${REGION} | \
-                docker login --username AWS --password-stdin ${ACC_ID}.dkr.ecr.${REGION}.amazonaws.com
-                """
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-cred'
+                ]]) {
+
+                    sh """
+                        aws ecr get-login-password --region ${REGION} | \
+                        docker login \
+                          --username AWS \
+                          --password-stdin \
+                          ${ACC_ID}.dkr.ecr.${REGION}.amazonaws.com
+                    """
+                }
             }
         }
 
         stage('Tag Docker Image') {
             steps {
                 sh """
-                docker tag ${PROJECT}/${COMPONENT}:${appVersion} ${ECR_REPO}:${appVersion}
-                docker tag ${PROJECT}/${COMPONENT}:${appVersion} ${ECR_REPO}:latest
+                    docker tag ${PROJECT}/${COMPONENT}:${appVersion} ${ECR_REPO}:${appVersion}
+                    docker tag ${PROJECT}/${COMPONENT}:${appVersion} ${ECR_REPO}:latest
                 """
             }
         }
@@ -126,36 +142,14 @@ pipeline {
         stage('Push Image to ECR') {
             steps {
                 sh """
-                docker push ${ECR_REPO}:${appVersion}
-                docker push ${ECR_REPO}:latest
+                    docker push ${ECR_REPO}:${appVersion}
+                    docker push ${ECR_REPO}:latest
                 """
-=======
-                echo 'Checking out source code...'
-            }
-        }
-
-        stage('Build') {
-            steps {
-                echo 'Building the application...'
-            }
-        }
-
-        stage('Test') {
-            steps {
-                echo 'Running tests...'
-            }
-        }
-
-        stage('Deploy') {
-            steps {
-                echo 'Deploying the application...'
->>>>>>> 6ec7c541ae0ca1aaaff2ee6ab3c54626f9e17809
             }
         }
     }
 
     post {
-<<<<<<< HEAD
 
         always {
             echo "Cleaning Workspace..."
@@ -172,18 +166,6 @@ pipeline {
 
         aborted {
             echo "Pipeline Aborted"
-=======
-        always {
-            echo 'Pipeline execution completed.'
-        }
-
-        success {
-            echo 'Build completed successfully.'
-        }
-
-        failure {
-            echo 'Build failed.'
->>>>>>> 6ec7c541ae0ca1aaaff2ee6ab3c54626f9e17809
         }
     }
 }
