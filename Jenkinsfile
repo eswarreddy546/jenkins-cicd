@@ -17,6 +17,7 @@ pipeline {
         ECR_REPO    = "${ACC_ID}.dkr.ecr.${REGION}.amazonaws.com/${PROJECT}/${COMPONENT}"
     }
 
+
     options {
         timeout(time: 30, unit: 'MINUTES')
         disableConcurrentBuilds()
@@ -268,7 +269,7 @@ pipeline {
             }
         }
 
-                 stage('Terraform EKS') {
+         stage('Terraform EKS') {
             steps {
                 dir('/home/ec2-user/eks-automation-deployment/90-eks') {
 
@@ -288,7 +289,7 @@ pipeline {
             }
         }
 
-      // <-- Close stages block
+    }   // <-- Close stages block
 
     post {
 
@@ -310,4 +311,4 @@ pipeline {
         }
     }
 
-    
+}
