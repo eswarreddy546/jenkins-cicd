@@ -96,7 +96,7 @@ pipeline {
             steps {
                 sh """
                     echo "=========================================="
-                    echo "     Trivy Image Vulnerability Scan"
+                    echo "      Trivy Image Vulnerability Scan"
                     echo "=========================================="
 
                     docker images
@@ -148,25 +148,29 @@ pipeline {
             }
         }
 
-       stage('Terraform VPC') {
-    steps {
-        dir('/home/ec2-user/eks-automation-deployment/00-vpc') {
+        stage('Terraform VPC') {
+            steps {
 
-            withCredentials([[
-                $class: 'AmazonWebServicesCredentialsBinding',
-                credentialsId: 'aws-cred'
-            ]]) {
+                dir('/home/ec2-user/eks-automation-deployment/00-vpc') {
 
-                sh '''
-                    terraform init
-                    terraform validate
-                    terraform plan
-                    terraform apply -auto-approve
-                '''
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-cred'
+                    ]]) {
+
+                        sh '''
+                            terraform init
+                            terraform validate
+                            terraform plan
+                            terraform apply -auto-approve
+                        '''
+                    }
+                }
             }
         }
+
     }
-}
+
     post {
 
         always {
