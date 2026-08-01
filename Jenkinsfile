@@ -147,6 +147,26 @@ pipeline {
                 """
             }
         }
+
+        stage('Terraform VPC') {
+            steps {
+                dir('eks-automation-deployment/00-vpc') {
+
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-cred'
+                    ]]) {
+
+                        sh '''
+                            terraform init
+                            terraform validate
+                            terraform plan
+                            terraform apply -auto-approve
+                        '''
+                    }
+                }
+            }
+        }
     }
 
     post {
